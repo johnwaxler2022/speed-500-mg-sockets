@@ -7,28 +7,37 @@ const authkey = "C6CB538265B3AFE350640DC98C61DB7223E14145F4E895C8E93958F53B3B8A2
 
 sio.on("connection", socket => {
 
-    socket.on("auth", (payload: { authkey: string }) => {
+    socket.on("request",
+        (payload: { headers: object, type: string, payload: any }) => {
 
-        const { success, message } = validateSchema(
-            Joi.object({ authkey: Joi.string().required() }),
-            payload
-        )
+            console.log(payload)
 
-        if (!success) {
-            return sendError(socket, message)
-        }
+            if (payload.type == "AUTH") {
 
-        if (payload.authkey != authkey) {
-            return sendError(socket, `"authkey" is invalid`)
-        }
+                const { success, message } = validateSchema(
+                    Joi.object({ authkey: Joi.string().required() }),
+                    payload.payload
+                )
 
-        socket.join(payload.authkey)
-        socket.emit("auth", {
-            message: "Authentication successful",
-            ...payload
+                if (!success) {
+                    return sendError(socket, message)
+                }
+    
+                if (payload.payload.authkey != authkey) {
+                    return sendError(socket, `"authkey" is invalid`)
+                }
+    
+                socket.join(payload.payload.authkey)
+                socket.emit("response", {
+                    headers: null,
+                    type: "AUTH",
+                    message: "Authentication successful",
+                    payload: payload.payload
+                })
+
+            }
+
         })
-
-    })
 
 })
 
